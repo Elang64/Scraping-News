@@ -37,9 +37,9 @@ const DUMMY_ALERTS = [
     link: 'https://example.com/berita/1',
     source: 'ANTARA News',
     severity_score: 6.0,
+    level: 3,
     matched_categories: 'pelanggaran_hukum,disiplin_internal',
     matched_words: 'oknum, pungli, penyalahgunaan wewenang',
-    notified: true,
     created_at: new Date(Date.now() - 1800000).toISOString(),
   },
   {
@@ -48,9 +48,9 @@ const DUMMY_ALERTS = [
     link: 'https://example.com/berita/2',
     source: 'CNN Indonesia',
     severity_score: 7.0,
+    level: 4,
     matched_categories: 'kekerasan,isu_viral',
     matched_words: 'penganiayaan, baku tembak, viral, ramai diperbincangkan',
-    notified: true,
     created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
   },
   {
@@ -58,10 +58,10 @@ const DUMMY_ALERTS = [
     title: 'Pangdam soroti dugaan intimidasi warga dalam operasi teritorial',
     link: 'https://example.com/berita/3',
     source: 'Sindonews',
-    severity_score: 8.0,
+    severity_score: 9.5,
+    level: 5,
     matched_categories: 'ham',
     matched_words: 'penyiksaan, intimidasi warga',
-    notified: true,
     created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
   },
   {
@@ -69,10 +69,10 @@ const DUMMY_ALERTS = [
     title: 'KPK periksa pejabat terkait pengadaan alutsista di lingkungan pertahanan',
     link: 'https://example.com/berita/4',
     source: 'ANTARA News',
-    severity_score: 5.0,
+    severity_score: 4.5,
+    level: 2,
     matched_categories: 'pelanggaran_hukum',
     matched_words: 'suap, korupsi',
-    notified: false,
     created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
   },
 ];
@@ -97,6 +97,7 @@ const DUMMY_SOURCES = [
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
+  const [selectedLevelFilter, setSelectedLevelFilter] = useState('ALL');
   const [systemStatus, setSystemStatus] = useState(null);
   const [scraperStatus, setScraperStatus] = useState(null);
   const [alerts, setAlerts] = useState([]);
@@ -122,7 +123,7 @@ export default function App() {
     }, 4500);
   };
 
-  const loadData = useCallback(async (isSilent = false) => {
+  const loadData = useCallback(async (isSilent = false, level = null) => {
     if (!isSilent) setIsRefreshing(true);
     let serverOk = false;
 
@@ -136,14 +137,14 @@ export default function App() {
       setScraperStatus(scraperRes);
       serverOk = true;
     } catch {
-      // Backend not yet reachable, use fallback
       setSystemStatus((prev) => prev || DUMMY_STATUS);
       setScraperStatus((prev) => prev || DUMMY_SCRAPER);
     }
 
-    // Fetch Alerts
+    // Fetch Alerts (support level filter query)
     try {
-      const alertsRes = await api.getAlerts(100);
+      const activeLvl = level !== null ? level : (selectedLevelFilter !== 'ALL' ? selectedLevelFilter : null);
+      const alertsRes = await api.getAlerts({ level: activeLvl, limit: 100 });
       setAlerts(alertsRes || []);
       serverOk = true;
     } catch {
@@ -175,13 +176,13 @@ export default function App() {
 
     setIsServerLive(serverOk);
     if (!isSilent) setIsRefreshing(false);
-  }, []);
+  }, [selectedLevelFilter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Auto Refresh Polling
+  // Auto Refresh Polling (every 30 seconds default, as specified in operator guide)
   useEffect(() => {
     if (autoRefreshInterval <= 0) return;
     const timer = setInterval(() => {
@@ -199,6 +200,11 @@ export default function App() {
     setAuthSession(null, null);
     setCurrentUser(null);
     showToast('Anda telah berhasil logout', 'info');
+  };
+
+  const handleFilterLevelFromAnywhere = (lvl) => {
+    setSelectedLevelFilter(lvl);
+    loadData(true, lvl === 'ALL' ? null : lvl);
   };
 
   const currentBackendUrl = getApiBaseUrl();
@@ -227,7 +233,7 @@ export default function App() {
               <code className="px-1.5 py-0.5 rounded bg-black/40 font-mono text-amber-300">
                 {currentBackendUrl}
               </code>
-              . Menampilkan data radar simulasi.
+              . Menampilkan data radar simulasi Level 1–5.
             </span>
           </div>
           <button
@@ -246,6 +252,7 @@ export default function App() {
           currentTab={currentTab}
           setTab={setCurrentTab}
           alertCount={alerts.length}
+          onFilterLevel={handleFilterLevelFromAnywhere}
         />
 
         {/* Center Content Views */}
@@ -262,6 +269,7 @@ export default function App() {
               onSelectAlert={setSelectedAlert}
               showToast={showToast}
               setTab={setCurrentTab}
+              onFilterLevel={handleFilterLevelFromAnywhere}
             />
           )}
 
@@ -269,6 +277,9 @@ export default function App() {
             <AlertsView
               alerts={alerts}
               onSelectAlert={setSelectedAlert}
+              selectedLevelFilter={selectedLevelFilter}
+              setSelectedLevelFilter={setSelectedLevelFilter}
+              onFetchAlertsWithLevel={(lvl) => loadData(true, lvl)}
               showToast={showToast}
             />
           )}
@@ -317,7 +328,7 @@ export default function App() {
             <span>&bull;</span>
             <span>Docker: 172.20.0.0/24</span>
             <span>&bull;</span>
-            <span className="text-emerald-400">v1.0-Release</span>
+            <span className="text-emerald-400">v1.1-LevelFilter</span>
           </div>
         </div>
       </footer>

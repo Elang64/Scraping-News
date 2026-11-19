@@ -12,7 +12,6 @@ export const setApiBaseUrl = (url) => {
   if (!url) {
     localStorage.removeItem('ews_api_base_url');
   } else {
-    // Strip trailing slash
     const cleaned = url.replace(/\/+$/, '');
     localStorage.setItem('ews_api_base_url', cleaned);
   }
@@ -82,8 +81,15 @@ export const api = {
   // Status & Health
   getStatus: () => apiFetch('/api/status'),
 
-  // Alerts
-  getAlerts: (limit = 100) => apiFetch(`/api/alerts?limit=${limit}`),
+  // Alerts with Level 1-5 filter support
+  getAlerts: ({ level, limit = 100 } = {}) => {
+    const params = new URLSearchParams();
+    if (level !== undefined && level !== null && level !== 'ALL' && level !== '') {
+      params.append('level', level);
+    }
+    params.append('limit', limit);
+    return apiFetch(`/api/alerts?${params.toString()}`);
+  },
 
   // Articles & News
   getArticles: ({ region, source, search, limit = 50, offset = 0 } = {}) => {

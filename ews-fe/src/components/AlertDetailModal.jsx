@@ -4,28 +4,20 @@ import {
   X,
   ExternalLink,
   ShieldAlert,
-  AlertTriangle,
   Calendar,
-  Send,
   Building,
   Tag,
-  CheckCircle2,
-  XCircle,
-  FileText
+  Layers,
+  Flame,
+  AlertTriangle
 } from 'lucide-react';
+import { getAlertLevelInfo } from '../utils/levels';
 
 export default function AlertDetailModal({ alert, onClose }) {
   if (!alert) return null;
 
   const score = Number(alert.severity_score || 0);
-  const isHigh = score >= 6;
-  const isMid = score >= 4 && score < 6;
-
-  const scoreColor = isHigh
-    ? 'text-red-400 bg-red-500/15 border-red-500/30'
-    : isMid
-    ? 'text-amber-400 bg-amber-500/15 border-amber-500/30'
-    : 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30';
+  const levelInfo = getAlertLevelInfo(alert);
 
   const categories = alert.matched_categories
     ? alert.matched_categories.split(',').map((c) => c.trim())
@@ -43,28 +35,33 @@ export default function AlertDetailModal({ alert, onClose }) {
     : '-';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
       <div 
         className="glass-panel w-full max-w-2xl rounded-2xl border border-white/20 p-6 shadow-2xl relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Glow behind */}
         <div className={`absolute top-0 right-0 w-72 h-72 rounded-full filter blur-3xl opacity-20 pointer-events-none ${
-          isHigh ? 'bg-red-500' : 'bg-emerald-500'
+          levelInfo.level >= 4 ? 'bg-red-500' : 'bg-cyan-500'
         }`} />
 
         {/* Modal Header */}
         <div className="flex items-start justify-between pb-4 border-b border-white/10 relative z-10">
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${scoreColor}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${levelInfo.badgeClass}`}>
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">
+              <div className="flex items-center space-x-2">
+                <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${levelInfo.badgeClass}`}>
+                  {levelInfo.label} (Skor {score.toFixed(1)})
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  ID #{alert.id}
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-white leading-snug mt-1">
                 Detail Peringatan Dini
-              </span>
-              <h3 className="text-base font-bold text-white leading-snug">
-                ID Alert #{alert.id}
               </h3>
             </div>
           </div>
@@ -96,48 +93,37 @@ export default function AlertDetailModal({ alert, onClose }) {
             </div>
           </div>
 
-          {/* Severity & Notification Grid */}
+          {/* Level & Severity Score Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            {/* Score Card */}
+            {/* Level Card */}
             <div className="glass-panel p-3.5 rounded-xl border border-white/10">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                Tingkat Keparahan (Severity Score)
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                Klasifikasi Level Alert
               </div>
-              <div className="flex items-center space-x-3">
-                <span className={`text-2xl font-black font-mono px-3 py-0.5 rounded-lg border ${scoreColor}`}>
-                  {score.toFixed(1)}
+              <div className="flex items-center space-x-2.5 mt-1.5">
+                <span className={`text-xl font-black font-mono px-3 py-1 rounded-lg border ${levelInfo.badgeClass}`}>
+                  Level {levelInfo.level}
                 </span>
-                <span className="text-xs text-slate-300 font-medium">
-                  {isHigh
-                    ? 'Tinggi (Prioritas Tindakan Segera)'
-                    : isMid
-                    ? 'Sedang (Perlu Pemantauan Teritorial)'
-                    : 'Rendah (Informasi Awal)'}
-                </span>
+                <div>
+                  <div className="text-xs font-bold text-white">{levelInfo.priority}</div>
+                  <div className="text-[11px] text-slate-400">Rentang skor: {levelInfo.range}</div>
+                </div>
               </div>
             </div>
 
-            {/* Telegram Notification Status */}
+            {/* Score Card */}
             <div className="glass-panel p-3.5 rounded-xl border border-white/10">
               <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                Status Telegram Notifier
+                Skor Severity NLP
               </div>
-              <div className="flex items-center space-x-2 mt-1">
-                {alert.notified ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    <span className="text-xs font-bold text-emerald-300">
-                      Terkirim ke Bot Telegram (@ews_tniad_bot)
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="w-5 h-5 text-amber-400" />
-                    <span className="text-xs font-bold text-amber-300">
-                      Pending / Belum Notifikasi
-                    </span>
-                  </>
-                )}
+              <div className="flex items-center space-x-3 mt-1.5">
+                <span className="text-2xl font-black font-mono text-white">
+                  {score.toFixed(1)}
+                </span>
+                <span className="text-xs text-slate-300">
+                  Total bobot kata kunci negatif terdeteksi
+                </span>
               </div>
             </div>
           </div>

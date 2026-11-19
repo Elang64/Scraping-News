@@ -7,18 +7,24 @@ import {
   ExternalLink,
   Flame,
   AlertTriangle,
-  CheckCircle2,
-  XCircle,
   Eye,
   ArrowUpDown,
-  Tag
+  Tag,
+  Layers,
+  RotateCcw
 } from 'lucide-react';
+import { LEVEL_CONFIG, getAlertLevelInfo } from '../utils/levels';
 
-export default function AlertsView({ alerts, onSelectAlert, showToast }) {
+export default function AlertsView({
+  alerts,
+  onSelectAlert,
+  selectedLevelFilter,
+  setSelectedLevelFilter,
+  onFetchAlertsWithLevel,
+  showToast,
+}) {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [severityFilter, setSeverityFilter] = useState('ALL');
-  const [notifiedFilter, setNotifiedFilter] = useState('ALL');
   const [sortField, setSortField] = useState('created_at');
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -36,6 +42,12 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
   const filteredAlerts = useMemo(() => {
     return alerts
       .filter((item) => {
+        // Level filter (if selected)
+        if (selectedLevelFilter && selectedLevelFilter !== 'ALL') {
+          const itemLevel = item.level || getAlertLevelInfo(item).level;
+          if (itemLevel !== Number(selectedLevelFilter)) return false;
+        }
+
         // Search text
         if (search) {
           const s = search.toLowerCase();
@@ -53,22 +65,15 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
           }
         }
 
-        // Severity
-        const score = item.severity_score || 0;
-        if (severityFilter === 'HIGH' && score < 6) return false;
-        if (severityFilter === 'MID' && (score < 4 || score >= 6)) return false;
-        if (severityFilter === 'LOW' && score >= 4) return false;
-
-        // Notified
-        if (notifiedFilter === 'NOTIFIED' && !item.notified) return false;
-        if (notifiedFilter === 'PENDING' && item.notified) return false;
-
         return true;
       })
       .sort((a, b) => {
         let valA = a[sortField];
         let valB = b[sortField];
-        if (sortField === 'severity_score') {
+        if (sortField === 'level') {
+          valA = a.level || getAlertLevelInfo(a).level;
+          valB = b.level || getAlertLevelInfo(b).level;
+        } else if (sortField === 'severity_score') {
           valA = Number(valA || 0);
           valB = Number(valB || 0);
         } else if (sortField === 'created_at') {
@@ -79,7 +84,7 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
         if (valA > valB) return sortAsc ? 1 : -1;
         return 0;
       });
-  }, [alerts, search, selectedCategory, severityFilter, notifiedFilter, sortField, sortAsc]);
+  }, [alerts, search, selectedCategory, selectedLevelFilter, sortField, sortAsc]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -90,6 +95,11 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
     }
   };
 
+  const handleLevelChange = (lvl) => {
+    setSelectedLevelFilter?.(lvl);
+    onFetchAlertsWithLevel?.(lvl === 'ALL' ? null : lvl);
+  };
+
   return (
     <div className="space-y-5">
       {/* Page Header */}
@@ -98,11 +108,11 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
           <div className="flex items-center space-x-2">
             <ShieldAlert className="w-5 h-5 text-red-400" />
             <h2 className="text-lg font-bold text-white tracking-wide">
-              Pusat Radar Peringatan Dini (Alerts)
+              Pusat Radar Peringatan Dini (Alert Level 1–5)
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Daftar artikel yang lolos deteksi sistem dengan bobot kata kunci sensitif
+            Daftar artikel yang lolos deteksi sistem terklasifikasi menurut Level 1 (rendah) s.d. Level 5 (kritis)
           </p>
         </div>
 
@@ -113,9 +123,65 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
         </div>
       </div>
 
+      {/* Level 1-5 Filter Tabs */}
+      <div className="glass-panel rounded-2xl p-3 border border-white/10">
+        <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
+          <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-300">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span>Filter Cepat Level Alert:</span>
+          </div>
+          {selectedLevelFilter && selectedLevelFilter !== 'ALL' && (
+            <button
+              onClick={() => handleLevelChange('ALL')}
+              className="text-xs font-semibold text-emerald-400 hover:underline flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Hapus Filter Level</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          <button
+            onClick={() => handleLevelChange('ALL')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+              !selectedLevelFilter || selectedLevelFilter === 'ALL'
+                ? 'bg-slate-700/80 text-white border border-white/20 shadow-glass'
+                : 'bg-slate-900/40 text-slate-400 border border-white/5 hover:text-white'
+            }`}
+          >
+            Semua Level
+          </button>
+
+          {[1, 2, 3, 4, 5].map((lvl) => {
+            const conf = LEVEL_CONFIG[lvl];
+            const isSelected = String(selectedLevelFilter) === String(lvl);
+            return (
+              <button
+                key={lvl}
+                onClick={() => handleLevelChange(lvl)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center border ${
+                  isSelected
+                    ? `${conf.badgeClass} ring-2 ring-white/20 shadow-glass-glow`
+                    : 'bg-slate-900/40 text-slate-400 border-white/5 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <div className="flex items-center space-x-1.5">
+                  <span className={`w-2 h-2 rounded-full ${conf.dotClass}`} />
+                  <span>{conf.label}</span>
+                </div>
+                <span className="text-[10px] opacity-75 font-mono font-normal">
+                  skor {conf.range}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Filter & Search Bar */}
       <div className="glass-panel rounded-2xl p-4 border border-white/10 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Search Box */}
           <div className="md:col-span-2 relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -123,35 +189,24 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari judul berita, kata terdeteksi, atau sumber..."
+              placeholder="Cari judul berita, kata terdeteksi, atau media sumber..."
               className="glass-input w-full pl-10 pr-4 py-2 rounded-xl text-xs"
             />
           </div>
 
-          {/* Severity Dropdown */}
+          {/* Level Dropdown (alternative) */}
           <div>
             <select
-              value={severityFilter}
-              onChange={(e) => setSeverityFilter(e.target.value)}
+              value={selectedLevelFilter || 'ALL'}
+              onChange={(e) => handleLevelChange(e.target.value)}
               className="glass-input w-full px-3 py-2 rounded-xl text-xs"
             >
-              <option value="ALL" className="bg-slate-900 text-white">Semua Tingkat Skor</option>
-              <option value="HIGH" className="bg-slate-900 text-red-400">Tinggi (Skor &ge; 6.0)</option>
-              <option value="MID" className="bg-slate-900 text-amber-400">Sedang (Skor 4.0 - 5.9)</option>
-              <option value="LOW" className="bg-slate-900 text-emerald-400">Rendah (Skor &lt; 4.0)</option>
-            </select>
-          </div>
-
-          {/* Notification status dropdown */}
-          <div>
-            <select
-              value={notifiedFilter}
-              onChange={(e) => setNotifiedFilter(e.target.value)}
-              className="glass-input w-full px-3 py-2 rounded-xl text-xs"
-            >
-              <option value="ALL" className="bg-slate-900 text-white">Semua Status Telegram</option>
-              <option value="NOTIFIED" className="bg-slate-900 text-white">Sudah Terkirim</option>
-              <option value="PENDING" className="bg-slate-900 text-white">Pending / Belum Terkirim</option>
+              <option value="ALL" className="bg-slate-900 text-white">Semua Level (1-5)</option>
+              <option value="1" className="bg-slate-900 text-blue-300">Level 1 (skor &lt; 3)</option>
+              <option value="2" className="bg-slate-900 text-cyan-300">Level 2 (skor 3-4)</option>
+              <option value="3" className="bg-slate-900 text-amber-300">Level 3 (skor 5-6)</option>
+              <option value="4" className="bg-slate-900 text-orange-300">Level 4 (skor 7-8)</option>
+              <option value="5" className="bg-slate-900 text-red-400">Level 5 (skor &ge; 9)</option>
             </select>
           </div>
         </div>
@@ -198,6 +253,15 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
                 <th className="py-3 px-4 font-semibold min-w-[280px]">JUDUL BERITA</th>
                 <th className="py-3 px-4 font-semibold">SUMBER</th>
                 <th
+                  onClick={() => handleSort('level')}
+                  className="py-3 px-4 font-semibold text-center cursor-pointer hover:text-white"
+                >
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>LEVEL</span>
+                    <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th
                   onClick={() => handleSort('severity_score')}
                   className="py-3 px-4 font-semibold text-center cursor-pointer hover:text-white"
                 >
@@ -207,19 +271,13 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
                   </div>
                 </th>
                 <th className="py-3 px-4 font-semibold">KATA KUNCI TERDETEKSI</th>
-                <th className="py-3 px-4 font-semibold text-center">TELEGRAM</th>
                 <th className="py-3 px-4 font-semibold text-right">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {filteredAlerts.map((item) => {
                 const score = Number(item.severity_score || 0);
-                const scoreStyle =
-                  score >= 6
-                    ? 'bg-red-500/20 text-red-300 border-red-500/40'
-                    : score >= 4
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                const levelInfo = getAlertLevelInfo(item);
 
                 const dateStr = item.created_at
                   ? new Date(item.created_at).toLocaleString('id-ID', {
@@ -266,8 +324,16 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
                       </span>
                     </td>
 
+                    {/* Level Column */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <span className={`font-mono font-bold px-2.5 py-1 rounded-lg border text-xs ${scoreStyle}`}>
+                      <span className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold ${levelInfo.badgeClass}`}>
+                        {levelInfo.label}
+                      </span>
+                    </td>
+
+                    {/* Severity Score */}
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <span className="font-mono font-bold text-white text-xs px-2 py-0.5 rounded bg-slate-900/80 border border-white/10">
                         {score.toFixed(1)}
                       </span>
                     </td>
@@ -288,18 +354,6 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
                           </span>
                         )}
                       </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      {item.notified ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                          <CheckCircle2 className="w-3 h-3" /> Terkirim
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                          <XCircle className="w-3 h-3" /> Pending
-                        </span>
-                      )}
                     </td>
 
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
@@ -335,7 +389,7 @@ export default function AlertsView({ alerts, onSelectAlert, showToast }) {
               {filteredAlerts.length === 0 && (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400">
-                    Tidak ada data peringatan dini yang sesuai kriteria pencarian.
+                    Tidak ada data peringatan dini yang sesuai kriteria level dan pencarian.
                   </td>
                 </tr>
               )}

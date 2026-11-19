@@ -6,15 +6,11 @@ import {
   Layers,
   Database,
   Radio,
-  Send,
-  ShieldCheck,
-  Cpu,
   Monitor,
-  Smartphone,
-  ExternalLink,
   Lock,
   Globe,
-  Terminal
+  Sliders,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function TopologyView() {
@@ -30,7 +26,7 @@ export default function TopologyView() {
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Arsitektur deployment multi-tier: Nginx Reverse Proxy, Docker Engine, PostgreSQL, dan Telegram Outbound
+            Arsitektur deployment sistem: Nginx Reverse Proxy, Docker Engine, PostgreSQL, dan Klasifikasi Alert Level 1–5
           </p>
         </div>
 
@@ -67,18 +63,18 @@ export default function TopologyView() {
           </div>
 
           <div className="glass-panel rounded-2xl p-4 border border-white/10 bg-slate-900/50">
-            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">
-              <Send className="w-4 h-4" />
-              <span>Kanal Telegram Pimpinan</span>
+            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
+              <Layers className="w-4 h-4" />
+              <span>Sistem Peringatan Dini</span>
             </div>
             <div className="space-y-1.5 text-xs text-slate-300">
               <div className="flex items-center justify-between py-1 border-b border-white/5">
-                <span>Bot Telegram:</span>
-                <span className="font-mono text-sky-400">@ews_tniad_bot</span>
+                <span>Klasifikasi Resiko:</span>
+                <span className="font-mono text-emerald-300 font-bold">Level 1 s.d. 5</span>
               </div>
               <div className="flex items-center justify-between py-1">
-                <span>Protokol Notifikasi:</span>
-                <span className="font-mono text-slate-300">HTTPS 443 (Outbound)</span>
+                <span>Ambang Batas Skor:</span>
+                <span className="font-mono text-amber-300">&ge; 2.0 (ALERT_THRESHOLD)</span>
               </div>
             </div>
           </div>
@@ -185,7 +181,7 @@ export default function TopologyView() {
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  Aplikasi React JSX + Vite + Tailwind UI Glassmorphism interaktif untuk staf & pimpinan.
+                  Aplikasi React JSX + Vite + Tailwind UI Glassmorphism interaktif lengkap dengan filter Level 1–5.
                 </p>
               </div>
 
@@ -201,7 +197,7 @@ export default function TopologyView() {
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  FastAPI Python &bull; Scraper Engine &bull; Detector NLP Bobot Kata &bull; Telegram Notifier.
+                  FastAPI Python &bull; Scraper Engine &bull; Klasifikasi Scoring Level 1–5 &bull; APScheduler.
                 </p>
               </div>
 

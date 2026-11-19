@@ -8,11 +8,13 @@ import {
   Users,
   Network,
   Sliders,
-  Radio,
-  ExternalLink
+  AlertTriangle,
+  Flame,
+  Layers
 } from 'lucide-react';
+import { LEVEL_CONFIG } from '../utils/levels';
 
-export default function Sidebar({ currentTab, setTab, alertCount = 0 }) {
+export default function Sidebar({ currentTab, setTab, alertCount = 0, onFilterLevel }) {
   const menuItems = [
     {
       id: 'dashboard',
@@ -22,7 +24,7 @@ export default function Sidebar({ currentTab, setTab, alertCount = 0 }) {
     },
     {
       id: 'alerts',
-      label: 'Peringatan Dini (Alerts)',
+      label: 'Pusat Alert (Level 1–5)',
       icon: ShieldAlert,
       badge: alertCount > 0 ? alertCount : null,
       badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
@@ -103,29 +105,40 @@ export default function Sidebar({ currentTab, setTab, alertCount = 0 }) {
           })}
         </div>
 
-        {/* Live Bot Card */}
+        {/* Quick Level Filter Indicator Card */}
         <div className="glass-panel rounded-2xl p-3.5 border border-white/10 relative overflow-hidden">
-          <div className="flex items-center space-x-2.5 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
-              <Radio className="w-4 h-4 animate-pulse" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-white">Telegram Alert Bot</div>
-              <div className="text-[11px] text-sky-400 font-mono">@ews_tniad_bot</div>
-            </div>
+          <div className="flex items-center space-x-2 mb-2 pb-1.5 border-b border-white/5">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-bold text-white uppercase tracking-wider">
+              Tingkat Alert (1–5)
+            </span>
           </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed mb-2.5">
-            Notifikasi instan dikirim secara otomatis ke grup komando saat skor isu &ge; ambang batas.
+          <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+            Klasifikasi otomatis berdasarkan bobot kata kunci negatif:
           </p>
-          <a
-            href="https://t.me/ews_tniad_bot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center space-x-1.5 w-full py-1.5 px-3 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] font-semibold transition-colors"
-          >
-            <span>Buka di Telegram</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <div className="space-y-1.5">
+            {[5, 4, 3, 2, 1].map((lvl) => {
+              const conf = LEVEL_CONFIG[lvl];
+              return (
+                <button
+                  key={lvl}
+                  onClick={() => {
+                    setTab('alerts');
+                    onFilterLevel?.(lvl);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-900/40 hover:bg-white/5 border border-white/5 text-[11px] transition-colors"
+                >
+                  <div className="flex items-center space-x-2">
+                    <span className={`w-2 h-2 rounded-full ${conf.dotClass}`} />
+                    <span className="font-semibold text-white">{conf.label}</span>
+                  </div>
+                  <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded border ${conf.badgeClass}`}>
+                    Skor {conf.range}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </aside>

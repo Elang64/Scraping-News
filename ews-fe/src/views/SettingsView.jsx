@@ -11,9 +11,11 @@ import {
   Radio,
   SlidersHorizontal,
   Save,
-  RotateCcw
+  RotateCcw,
+  Layers
 } from 'lucide-react';
 import { getApiBaseUrl, setApiBaseUrl, DEFAULT_BASE_URL, api } from '../services/api';
+import { LEVEL_CONFIG } from '../utils/levels';
 
 export default function SettingsView({
   autoRefreshInterval,
@@ -79,11 +81,11 @@ export default function SettingsView({
         <div className="flex items-center space-x-2">
           <Sliders className="w-5 h-5 text-emerald-400" />
           <h2 className="text-lg font-bold text-white tracking-wide">
-            Konfigurasi IP & Koneksi Backend
+            Konfigurasi IP & Parameter Sistem EWS
           </h2>
         </div>
         <p className="text-xs text-slate-400 mt-0.5">
-          Atur alamat endpoint API ews-be, interval auto-refresh, dan parameter deteksi isu
+          Atur alamat endpoint API ews-be, interval auto-refresh, dan parameter klasifikasi Level 1–5
         </p>
       </div>
 
@@ -206,7 +208,7 @@ export default function SettingsView({
               {[
                 { label: 'Nonaktif', value: 0 },
                 { label: 'Setiap 15 Detik', value: 15 },
-                { label: 'Setiap 30 Detik (Disarankan)', value: 30 },
+                { label: 'Setiap 30 Detik (Sesuai Panduan Operator)', value: 30 },
                 { label: 'Setiap 60 Detik', value: 60 },
               ].map((item) => (
                 <button
@@ -233,63 +235,41 @@ export default function SettingsView({
           </div>
         </div>
 
-        {/* Right 1 Col: EWS Detection Rules Summary */}
+        {/* Right 1 Col: LEVEL_RANGES & Threshold Definition from config.py */}
         <div className="glass-panel rounded-2xl p-5 border border-white/10 space-y-4">
           <div className="flex items-center space-x-2 pb-2 border-b border-white/10">
-            <Shield className="w-4 h-4 text-amber-400" />
+            <Layers className="w-4 h-4 text-cyan-400" />
             <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              Parameter Algoritma Deteksi
+              Pemetaan Level Alert (LEVEL_RANGES)
             </h3>
           </div>
 
-          <div className="space-y-3 text-xs">
-            <div className="p-3 rounded-xl bg-slate-900/50 border border-white/5">
-              <span className="text-[11px] font-bold text-slate-300 block mb-1">
-                Ambang Batas Peringatan (ALERT_THRESHOLD):
-              </span>
-              <div className="text-amber-400 font-mono font-bold text-base">
-                Skor &ge; 2.0
-              </div>
-              <p className="text-[10px] text-slate-400 mt-0.5">
-                Artikel dengan skor di bawah 2 hanya disimpan sebagai arsip tanpa alert Telegram.
-              </p>
-            </div>
+          <div className="space-y-2.5 text-xs">
+            {[1, 2, 3, 4, 5].map((lvl) => {
+              const conf = LEVEL_CONFIG[lvl];
+              return (
+                <div key={lvl} className="p-2.5 rounded-xl bg-slate-900/50 border border-white/5 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${conf.dotClass}`} />
+                    <span className="font-bold text-white">{conf.label}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-cyan-300 font-bold">{conf.description}</div>
+                    <div className="text-[10px] text-slate-400">{conf.priority}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-            <div className="p-3 rounded-xl bg-slate-900/50 border border-white/5">
-              <span className="text-[11px] font-bold text-slate-300 block mb-1.5">
-                Kategori Bobot Kata Negatif:
-              </span>
-              <ul className="space-y-1 text-[11px] text-slate-300">
-                <li className="flex justify-between">
-                  <span>Pelanggaran HAM:</span>
-                  <b className="text-red-400 font-mono">+4 poin</b>
-                </li>
-                <li className="flex justify-between">
-                  <span>Pelanggaran Hukum & Suap:</span>
-                  <b className="text-red-400 font-mono">+3 poin</b>
-                </li>
-                <li className="flex justify-between">
-                  <span>Kekerasan & Baku Tembak:</span>
-                  <b className="text-red-400 font-mono">+3 poin</b>
-                </li>
-                <li className="flex justify-between">
-                  <span>Disiplin Internal & Oknum:</span>
-                  <b className="text-amber-400 font-mono">+2 poin</b>
-                </li>
-                <li className="flex justify-between">
-                  <span>Isu Viral / Ramai:</span>
-                  <b className="text-emerald-400 font-mono">+1 poin</b>
-                </li>
-              </ul>
+          <div className="pt-2 border-t border-white/10 space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-slate-400">ALERT_THRESHOLD:</span>
+              <span className="font-mono text-amber-400 font-bold">Skor &ge; 2.0</span>
             </div>
-
-            <div className="p-3 rounded-xl bg-slate-900/50 border border-white/5">
-              <span className="text-[11px] font-bold text-slate-300 block mb-1">
-                Interval Scrape Periodik:
-              </span>
-              <div className="text-cyan-400 font-mono font-bold">
-                15 Menit Sekali (APScheduler)
-              </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Interval Scrape:</span>
+              <span className="font-mono text-emerald-400 font-bold">15 Menit Sekali</span>
             </div>
           </div>
         </div>

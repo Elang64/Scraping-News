@@ -2,36 +2,44 @@
 
 Frontend antarmuka web modern dengan gaya **UI Glassmorphism** untuk sistem **EWS Monitoring Media & Isu Potensial TNI AD**, terintegrasi dengan backend FastAPI (`ews-be`) pada IP target `10.10.100.10:8000`.
 
-## Fitur Utama
+## Fitur & Penyesuaian Terbaru (Update Commit `ea768ea`)
 
-1. **Dashboard & Radar Komando Utama**:
-   - Status Uptime, Total Berita di-scrape, Total Alert, dan Isu Kritis (Skor &ge; 6.0).
-   - Kontrol langsung Scraper (Start, Stop, Scrape Sekarang) dengan indikator jadwal scrape berikutnya.
-   - Distribusi tingkat resiko (Tinggi, Sedang, Rendah) & Berita terkini yang masuk.
+1. **Klasifikasi Alert Level 1–5**:
+   - **Level 1**: Skor < 3 (Rendah / Informasi Awal)
+   - **Level 2**: Skor 3–4 (Sedang-Rendah / Perhatian Ringan)
+   - **Level 3**: Skor 5–6 (Sedang / Perlu Pemantauan)
+   - **Level 4**: Skor 7–8 (Tinggi / Prioritas Penanganan Segera)
+   - **Level 5**: Skor &ge; 9 (Kritis / Atensi Pimpinan Mabes)
+   - Filter cepat level pada pusat radar alert dan integrasi parameter query `/api/alerts?level=...`.
 
-2. **Pusat Radar Peringatan Dini (Alerts)**:
-   - Pencarian real-time dan penyaringan berbasis kategori (`pelanggaran_hukum`, `kekerasan`, `ham`, `disiplin_internal`, `isu_viral`).
-   - Filter tingkat skor severity (&ge; 6, 4-5.9, &lt; 4) dan status pengiriman Telegram Bot.
-   - Modal inspeksi detail alert dengan penyorotan kata kunci (*matched keywords*), skor, dan tautan berita asli.
+2. **Dashboard & Radar Komando Utama**:
+   - Status Uptime, Total Berita di-scrape, Total Alert, dan Isu Prioritas Tinggi (Level 4 & 5).
+   - Kontrol langsung Scraper (Start, Stop, Scrape Sekarang) dengan indikator jadwal berikutnya.
+   - Grafik distribusi Level 1 s.d. Level 5 secara visual.
 
-3. **Feed Berita Media & Arsip (Articles Explorer)**:
+3. **Pusat Radar Peringatan Dini (Alerts)**:
+   - Filter instan level 1–5, kategori isu (`pelanggaran_hukum`, `kekerasan`, `ham`, `disiplin_internal`, `isu_viral`), dan pencarian teks.
+   - Kolom tabel Level dan Skor numerik.
+   - Modal detail inspeksi alert dan tautan ke artikel berita asli.
+
+4. **Feed Berita Media & Arsip (Articles Explorer)**:
    - Filter berdasarkan wilayah kepulauan (Sumatra, Jawa, Kalimantan, Sulawesi, Bali-Nusra, Maluku-Papua, Nasional) dan media asal.
-   - Tampilan ganda: Mode Tabel (*List*) & Mode Kartu (*Grid*).
+   - Mode tampilan ganda: Mode Tabel (*List*) & Mode Kartu (*Grid*).
 
-4. **Radar Monitoring Regional Nusantara**:
+5. **Radar Monitoring Regional Nusantara**:
    - Pemetaan visual 26 RSS Feed ANTARA per wilayah pulau dan komando teritorial (Kodam).
 
-5. **Topologi Infrastruktur Sistem**:
-   - Visualisasi arsitektur interaktif sesuai topologi final: Host Ubuntu, Nginx 80/443, BIND9 DNS 53, Netdata 19999, Docker Bridge Network (172.20.0.0/24), Frontend 5173, Backend 8000, PostgreSQL 5432, dan Telegram Notifier.
+6. **Topologi Infrastruktur Sistem**:
+   - Visualisasi arsitektur interaktif sesuai topologi: Ubuntu Host (10.10.100.1 / 10.10.100.10), Nginx 80/443, BIND9 DNS 53, Netdata 19999, Docker Bridge Network (172.20.0.0/24), Frontend 5173, Backend 8000, dan PostgreSQL 5432.
 
-6. **Manajemen Operator & Hak Akses (CRUD User)**:
+7. **Manajemen Operator & Hak Akses (CRUD User)**:
    - Pengelolaan akun petugas (*Administrator*, *Staff*, *Viewer*), status aktif/nonaktif akun, serta login/logout sesi.
 
-7. **Konfigurasi IP & Koneksi Backend**:
+8. **Pengaturan IP & Koneksi Backend**:
    - Pengaturan dinamis alamat target backend (default: `http://10.10.100.10:8000`).
-   - Tombol pengujian koneksi (*Test Ping /api/status*) dengan kalkulasi latensi ms.
+   - Tombol pengujian koneksi (*Test Ping /api/status*) beserta informasi latensi ms.
    - Pilihan preset IP cepat (`10.10.100.10:8000`, `10.10.100.1:8000`, `localhost:8000`, dan Same-Origin Nginx).
-   - Pengaturan interval auto-refresh data.
+   - Pengaturan interval auto-refresh data (15s, 30s, 60s, Nonaktif).
 
 ---
 
